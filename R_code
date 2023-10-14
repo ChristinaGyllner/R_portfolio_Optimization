@@ -1,5 +1,5 @@
 library(quantmod)
-#step1  : downloading pricing data from Yahoo Finance API
+#downloading pricing data from Yahoo Finance API
 getSymbols("IXN")
 IXN<- getSymbols("IXN", auto.assign=FALSE) [,6]
 QQQ <- getSymbols("QQQ", auto.assign=FALSE) [,6]
@@ -8,7 +8,7 @@ VNQ<- getSymbols("VNQ", auto.assign=FALSE) [,6]
 GLD <- getSymbols("GLD",auto.assign=FALSE) [,6]
 joined_prices <- merge.xts(IXN,QQQ,IEF,VNQ,GLD)
 
-##RETURNS##
+Returns
 library(PerformanceAnalytics)
 return1_12<-periodReturn(IXN,period="monthly",subset="2022/01/01::") 
 return2_12<-periodReturn(QQQ,period="monthly",subset="2022/01/01::")
@@ -49,7 +49,7 @@ Return.cumulative(return3_24,geometric=T)*0.5
 Return.cumulative(return4_24,geometric=T)*0.5
 Return.cumulative(return5_24,geometric=T)*0.5
 
-#Allocate weights
+#allocate weights
 total<- sum(0.175,0.221+0.285,0.089,0.23)
 stock1_alloc <- 0.175/total
 stock2_alloc <- 0.221/total
@@ -85,7 +85,6 @@ Return.cumulative(joined_portfolio_ret18$monthly.returns.3)
 Return.cumulative(joined_portfolio_ret18$monthly.returns.4)
 Return.cumulative(joined_portfolio_ret18$portfolio)
 
-
 #24 months
 joined_portfolio_ret24 <- as.data.frame(portfolio_24_return) %>%
   mutate(portfolio = stock1_alloc*monthly.returns+ 
@@ -99,7 +98,7 @@ plot(joined_portfolio_ret12$portfolio, type="l")
 plot(joined_portfolio_ret18$portfolio, type="l")
 plot(joined_portfolio_ret24$portfolio, type="l")
 
-###################################################
+########
 n<-21
 joined_returns <- as.data.frame(joined_prices) %>% 
   mutate(IXN_ROR = log(IXN.Adjusted/lag(IXN.Adjusted, n))) %>% 
@@ -123,16 +122,14 @@ rquery.cormat(joined_portfolio_ret12)
 time_index_port<-nrow(joined_portfolio_ret12)
 cor(joined_portfolio_ret12[time_index_port:(time_index_port-11),], use='complete.obs')
 
-#Example 1 - Rename monthly.returns.x
+#Rename monthly.returns.x
 #colnames(joined_portfolio_ret12)[1] ="IXN_cor"
 #colnames(joined_portfolio_ret12)[2] ="QQQ_cor"
 #colnames(joined_portfolio_ret12)[3] ="IEF_cor"
 #colnames(joined_portfolio_ret12)[4] ="VNQ_cor"
 #colnames(joined_portfolio_ret12)[5] ="GLD_cor"
 
-
-
-#Adding a benchmark before we do risk analysis
+#Adding benchmark before risk analysis
 #Using VONE
 
 library(dplyr)
@@ -141,7 +138,6 @@ plot(benchmark_returns)
 joined_monthlyreturns <- merge.xts(stock1_returns, stock2_returns, stock3_returns, stock4_returns, stock5_returns, benchmark_returns)
 time_index<-nrow(joined_monthlyreturn)
 joined_monthlyreturn<- as.data.frame(joined_monthlyreturn) 
-
 
 Return.cumulative<-(joined_monthlyreturn$monthly.returns[time_index : (time_index-11)])
 
@@ -155,7 +151,6 @@ portfolio_sigma<-sd(joined_portfolio_ret12$portfolio[time_index_port :(time_inde
 VONE_sigma<-sd(joined_monthlyreturns$monthly.returns.5[time_index : (time_index-11)])*sqrt(12)
 print(c(stock1_sigma,stock2_sigma,stock3_sigma,stock4_sigma,stock5_sigma,portfolio_sigma,VONE_sigma))
 
-
 #Sharpe Ratio 
 riskfree <- 0.0001
 stock1_sharpe <- (mean(joined_monthlyreturn$monthly.returns[(time_index-11):time_index]) - riskfree)/ stock1_sigma
@@ -167,9 +162,8 @@ portfolio_sharpe <- (mean((joined_portfolio_ret12$portfolio) - riskfree))/ portf
 print(c(stock1_sharpe, stock2_sharpe, stock3_sharpe, stock4_sharpe, stock5_sharpe, portfolio_sharpe))
 
 
-
-#EFFICIENT FRONTIER###
-# based on code from: https://www.r-bloggers.com/2016/05/a-gentle-introduction-to-finance-using-r-efficient-frontier-and-capm-part-1/
+#EFFICIENT FRONTIER
+#based on code from: https://www.r-bloggers.com/2016/05/a-gentle-introduction-to-finance-using-r-efficient-frontier-and-capm-part-1/
 library(data.table)
 library(scales)
 library(ggplot2)
@@ -200,14 +194,14 @@ ggplot(dt, aes(x = date, y = idx_price, color = ticker)) +
   xlab("Date") + ylab("Pricen(Indexed 2000 = 1)") +
   scale_color_discrete(name = "Company")
 
-# calculate the arithmetic returns
+#calculate the arithmetic returns
 dt[, ret := price / shift(price, 1) - 1, by = ticker]
 
-# summary table
-# take only non-na values
+#summary table
+#take only non-na values
 tab <- dt[!is.na(ret), .(ticker, ret)]
 
-# calculate the expected returns (historical mean of returns) and volatility (standard deviation of returns)
+#calculate the expected returns (historical mean of returns) and volatility (standard deviation of returns)
 tab <- tab[, .(er = round(mean(ret), 4),
                sd = round(sd(ret), 4)),
            by = "ticker"]
@@ -220,7 +214,7 @@ ggplot(tab, aes(x = sd, y = er, color = ticker)) +
   scale_y_continuous(label = percent, limits = c(0, 0.03)) +
   scale_x_continuous(label = percent, limits = c(0, 0.1))
 
-### Three risky assets portfolio:
+#Three risky assets portfolio:
 ticker1_select <- "IXN" 
 ticker2_select <- "QQQ"
 ticker3_select <- "VNQ"
@@ -313,14 +307,13 @@ ggplot(data=IEF_FF3F[[1]])+
   geom_line(aes(x=Date, y=tr_cum), color="blue")
 
 
-#calling the Fama French 3F model UDF for VNQ
+#calling Fama French 3F model UDF for VNQ
 VNQ_FF3F <- fama_french_3F(ticker="VNQ", from_date='2012-01-01', to_date='2022-12-11')
 summary(VNQ_FF3F[[2]])
 
 ggplot(data=VNQ_FF3F[[1]])+
   geom_line(aes(x=Date, y=rr_spf), color="red4")+
   geom_line(aes(x=Date, y=tr_cum), color="blue")
-
 
 #calling Fama French 3F model UDF for GLD
 GLD_FF3F <- fama_french_3F(ticker="GLD", from_date='2012-01-01', to_date='2022-12-11')
