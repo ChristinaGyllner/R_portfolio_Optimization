@@ -1,7 +1,369 @@
-echo "# R_portfolio_Optimization" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/ChristinaGyllner/R_portfolio_Optimization.git
-git push -u origin main
+library(quantmod)
+#step1  : downloading pricing data from Yahoo Finance API
+getSymbols("IXN")
+IXN<- getSymbols("IXN", auto.assign=FALSE) [,6]
+QQQ <- getSymbols("QQQ", auto.assign=FALSE) [,6]
+IEF <- getSymbols("IEF",auto.assign=FALSE) [,6]
+VNQ<- getSymbols("VNQ", auto.assign=FALSE) [,6]
+GLD <- getSymbols("GLD",auto.assign=FALSE) [,6]
+joined_prices <- merge.xts(IXN,QQQ,IEF,VNQ,GLD)
+
+##RETURNS##
+library(PerformanceAnalytics)
+return1_12<-periodReturn(IXN,period="monthly",subset="2022/01/01::") 
+return2_12<-periodReturn(QQQ,period="monthly",subset="2022/01/01::")
+return3_12<-periodReturn(IEF,period="monthly",subset="2022/01/01::")
+return4_12<-periodReturn(VNQ,period="monthly",subset="2022/01/01::")
+return5_12<-periodReturn(GLD,period="monthly",subset="2022/01/01::")
+
+Return.cumulative(return1_12,geometric=T)
+Return.cumulative(return2_12,geometric=T)
+Return.cumulative(return3_12,geometric=T)
+Return.cumulative(return4_12,geometric=T)
+Return.cumulative(return5_12,geometric=T)
+portfolio_12_return<-cbind(return1_12, return2_12,return3_12, return4_12,return5_12)
+
+return1_18<-periodReturn(IXN,period="monthly",subset="2021-06-30::") 
+return2_18<-periodReturn(QQQ,period="monthly",subset="2021-06-30::")
+return3_18<-periodReturn(IEF,period="monthly",subset="2021-06-30::")
+return4_18<-periodReturn(VNQ,period="monthly",subset="2021-06-30::")
+return5_18<-periodReturn(GLD,period="monthly",subset="2021-06-30::")
+portfolio_18_return<-cbind(return1_18, return2_18,return3_18, return4_18,return5_18)
+
+Return.cumulative(return1_18,geometric=T)*(12/18)
+Return.cumulative(return2_18,geometric=T)*(12/18)
+Return.cumulative(return3_18,geometric=T)*(12/18)
+Return.cumulative(return4_18,geometric=T)*(12/18)
+Return.cumulative(return5_18,geometric=T)*(12/18)
+
+return1_24<-periodReturn(IXN,period="monthly",subset="2021/01/01::")
+return2_24<-periodReturn(QQQ,period="monthly",subset="2021/01/01::")
+return3_24<-periodReturn(IEF,period="monthly",subset="2021/01/01::")
+return4_24<-periodReturn(VNQ,period="monthly",subset="2021/01/01::")
+return5_24<-periodReturn(GLD,period="monthly",subset="2021/01/01::")
+portfolio_24_return<-cbind(return1_24, return2_24,return3_24, return4_24,return5_24)
+
+Return.cumulative(return1_24,geometric=T)*0.5
+Return.cumulative(return2_24,geometric=T)*0.5
+Return.cumulative(return3_24,geometric=T)*0.5
+Return.cumulative(return4_24,geometric=T)*0.5
+Return.cumulative(return5_24,geometric=T)*0.5
+
+#Allocate weights
+total<- sum(0.175,0.221+0.285,0.089,0.23)
+stock1_alloc <- 0.175/total
+stock2_alloc <- 0.221/total
+stock3_alloc <- 0.285/total
+stock4_alloc <- 0.089/total
+stock5_alloc <- 0.23/total
+
+
+library(dplyr)
+#12 months
+joined_portfolio_ret12 <- as.data.frame(portfolio_12_return) %>%
+  mutate(portfolio = stock1_alloc*monthly.returns+ 
+           stock2_alloc*monthly.returns.1+
+           stock3_alloc*monthly.returns.2+
+           stock4_alloc*monthly.returns.3+ 
+           stock5_alloc*monthly.returns.4)
+
+Return.cumulative(joined_portfolio_ret12)
+
+#18 months
+joined_portfolio_ret18 <- as.data.frame(portfolio_18_return) %>%
+  mutate(portfolio = stock1_alloc*monthly.returns+ 
+           stock2_alloc*monthly.returns.1+
+           stock3_alloc*monthly.returns.2+
+           stock4_alloc*monthly.returns.3+ 
+           stock5_alloc*monthly.returns.4)
+Return.cumulative(joined_portfolio_ret18)
+
+Return.cumulative(joined_portfolio_ret18$monthly.returns)
+Return.cumulative(joined_portfolio_ret18$monthly.returns.1)
+Return.cumulative(joined_portfolio_ret18$monthly.returns.2)
+Return.cumulative(joined_portfolio_ret18$monthly.returns.3)
+Return.cumulative(joined_portfolio_ret18$monthly.returns.4)
+Return.cumulative(joined_portfolio_ret18$portfolio)
+
+
+#24 months
+joined_portfolio_ret24 <- as.data.frame(portfolio_24_return) %>%
+  mutate(portfolio = stock1_alloc*monthly.returns+ 
+           stock2_alloc*monthly.returns.1+
+           stock3_alloc*monthly.returns.2+
+           stock4_alloc*monthly.returns.3+ 
+           stock5_alloc*monthly.returns.4)
+Return.cumulative(joined_portfolio_ret24)
+
+plot(joined_portfolio_ret12$portfolio, type="l")
+plot(joined_portfolio_ret18$portfolio, type="l")
+plot(joined_portfolio_ret24$portfolio, type="l")
+
+###################################################
+n<-21
+joined_returns <- as.data.frame(joined_prices) %>% 
+  mutate(IXN_ROR = log(IXN.Adjusted/lag(IXN.Adjusted, n))) %>% 
+  mutate(QQQ_ROR = log(QQQ.Adjusted/lag(QQQ.Adjusted, n))) %>% 
+  mutate(IEF_ROR = log(IEF.Adjusted/lag(IEF.Adjusted, n))) %>% 
+  mutate(IEF_ROR = log(IEF.Adjusted/lag(IEF.Adjusted, n))) %>% 
+  mutate(VNQ_ROR = log(VNQ.Adjusted/lag(VNQ.Adjusted, n))) %>% 
+  mutate(GLD_ROR = log(GLD.Adjusted/lag(GLD.Adjusted, n))) 
+
+stock1_returns<-monthlyReturn(getSymbols("IXN", auto.assign=FALSE))
+stock2_returns<-monthlyReturn(getSymbols("QQQ", auto.assign=FALSE))
+stock3_returns<-monthlyReturn(getSymbols("IEF", auto.assign=FALSE))
+stock4_returns<-monthlyReturn(getSymbols("VNQ", auto.assign=FALSE)) 
+stock5_returns<-monthlyReturn(getSymbols("GLD", auto.assign=FALSE))
+joined_monthlyreturn<-merge.xts(stock1_returns, stock2_returns, stock3_returns, stock4_returns, stock5_returns)
+
+#Correlation
+library(corrplot)
+source("http://www.sthda.com/upload/rquery_cormat.r")
+rquery.cormat(joined_portfolio_ret12)
+time_index_port<-nrow(joined_portfolio_ret12)
+cor(joined_portfolio_ret12[time_index_port:(time_index_port-11),], use='complete.obs')
+
+#Example 1 - Rename monthly.returns.x
+#colnames(joined_portfolio_ret12)[1] ="IXN_cor"
+#colnames(joined_portfolio_ret12)[2] ="QQQ_cor"
+#colnames(joined_portfolio_ret12)[3] ="IEF_cor"
+#colnames(joined_portfolio_ret12)[4] ="VNQ_cor"
+#colnames(joined_portfolio_ret12)[5] ="GLD_cor"
+
+
+
+#Adding a benchmark before we do risk analysis
+#Using VONE
+
+library(dplyr)
+benchmark_returns <- monthlyReturn(getSymbols("VONE", auto.assign = FALSE))
+plot(benchmark_returns)
+joined_monthlyreturns <- merge.xts(stock1_returns, stock2_returns, stock3_returns, stock4_returns, stock5_returns, benchmark_returns)
+time_index<-nrow(joined_monthlyreturn)
+joined_monthlyreturn<- as.data.frame(joined_monthlyreturn) 
+
+
+Return.cumulative<-(joined_monthlyreturn$monthly.returns[time_index : (time_index-11)])
+
+#standard deviation 
+stock1_sigma<-sd(joined_monthlyreturn$monthly.returns[time_index : (time_index-11)])*sqrt(12)
+stock2_sigma<-sd(joined_monthlyreturn$monthly.returns.1[time_index :(time_index-11)])*sqrt(12)
+stock3_sigma<-sd(joined_monthlyreturn$monthly.returns.2[time_index :(time_index-11)])*sqrt(12)
+stock4_sigma<-sd(joined_monthlyreturn$monthly.returns.3[time_index :(time_index-11)])*sqrt(12)
+stock5_sigma<-sd(joined_monthlyreturn$monthly.returns.4[time_index :(time_index-11)])*sqrt(12)
+portfolio_sigma<-sd(joined_portfolio_ret12$portfolio[time_index_port :(time_index_port-11)])*sqrt(12)
+VONE_sigma<-sd(joined_monthlyreturns$monthly.returns.5[time_index : (time_index-11)])*sqrt(12)
+print(c(stock1_sigma,stock2_sigma,stock3_sigma,stock4_sigma,stock5_sigma,portfolio_sigma,VONE_sigma))
+
+
+#Sharpe Ratio 
+riskfree <- 0.0001
+stock1_sharpe <- (mean(joined_monthlyreturn$monthly.returns[(time_index-11):time_index]) - riskfree)/ stock1_sigma
+stock2_sharpe <- (mean(joined_monthlyreturn$monthly.returns.1[(time_index-11):time_index]) - riskfree)/ stock2_sigma
+stock3_sharpe <- (mean(joined_monthlyreturn$monthly.returns.1[(time_index-11):time_index]) - riskfree)/ stock3_sigma
+stock4_sharpe <- (mean(joined_monthlyreturn$monthly.returns.3[(time_index-11):time_index]) - riskfree)/stock3_sigma
+stock5_sharpe <- (mean(joined_monthlyreturn$monthly.returns.4[(time_index-11): time_index]) - riskfree)/ stock4_sigma
+portfolio_sharpe <- (mean((joined_portfolio_ret12$portfolio) - riskfree))/ portfolio_sigma
+print(c(stock1_sharpe, stock2_sharpe, stock3_sharpe, stock4_sharpe, stock5_sharpe, portfolio_sharpe))
+
+
+
+#EFFICIENT FRONTIER###
+# based on code from: https://www.r-bloggers.com/2016/05/a-gentle-introduction-to-finance-using-r-efficient-frontier-and-capm-part-1/
+library(data.table)
+library(scales)
+library(ggplot2)
+library(quantmod)
+library(reshape2)
+ticker1 <- "IXN"
+ticker2<- "QQQ"
+ticker3<- "VNQ"
+mydf1 <- as.data.frame(getSymbols(ticker1, auto.assign=FALSE))
+mydf2 <- as.data.frame(getSymbols(ticker2, auto.assign=FALSE))
+mydf3 <- as.data.frame(getSymbols(ticker3, auto.assign=FALSE))
+
+combined_df <- cbind(mydf1[,4], mydf2[,4], mydf3[,4])
+
+dt <- as.data.frame(combined_df)
+colnames(dt) <- c(ticker1, ticker2, ticker3)
+dt$date = as.Date(rownames(mydf1))
+dt <- melt(dt, id="date")
+colnames(dt) <- c("date", "ticker","price")
+dt <- data.table(dt)
+# create indexed values
+dt[, idx_price := price/price[1], by = ticker]
+# plot the indexed values
+ggplot(dt, aes(x = date, y = idx_price, color = ticker)) +
+  geom_line() +
+  # Miscellaneous Formatting
+  theme_bw() + ggtitle("Price Developments") +
+  xlab("Date") + ylab("Pricen(Indexed 2000 = 1)") +
+  scale_color_discrete(name = "Company")
+
+# calculate the arithmetic returns
+dt[, ret := price / shift(price, 1) - 1, by = ticker]
+
+# summary table
+# take only non-na values
+tab <- dt[!is.na(ret), .(ticker, ret)]
+
+# calculate the expected returns (historical mean of returns) and volatility (standard deviation of returns)
+tab <- tab[, .(er = round(mean(ret), 4),
+               sd = round(sd(ret), 4)),
+           by = "ticker"]
+
+ggplot(tab, aes(x = sd, y = er, color = ticker)) +
+  geom_point(size = 5) +
+  # Miscellaneous Formatting
+  theme_bw() + ggtitle("Risk-Return Tradeoff") +
+  xlab("Volatility") + ylab("Expected Returns") +
+  scale_y_continuous(label = percent, limits = c(0, 0.03)) +
+  scale_x_continuous(label = percent, limits = c(0, 0.1))
+
+### Three risky assets portfolio:
+ticker1_select <- "IXN" 
+ticker2_select <- "QQQ"
+ticker3_select <- "VNQ"
+
+mydf1 <- as.data.frame(monthlyReturn(getSymbols(ticker1_select, auto.assign=FALSE)))
+mydf2 <- as.data.frame(monthlyReturn(getSymbols(ticker2_select, auto.assign=FALSE)))
+mydf3 <- as.data.frame(monthlyReturn(getSymbols(ticker3_select, auto.assign=FALSE)))
+combined_df <- cbind(mydf1[,1], mydf2[,1], mydf3[,1])
+
+df <- as.data.frame(combined_df)
+colnames(df) <- c("x","y", "z")
+df$date = as.Date(rownames(mydf1))
+# I) expected returns for the two assets
+er_x <- mean(df$x)
+er_y <- mean(df$y)
+er_z <- mean(df$z)
+
+# II) risk (standard deviation) as a risk measure
+sd_x <- sd(df$x)
+sd_y <- sd(df$y)
+sd_z <- sd(df$z)
+
+# III) covariance
+cov_xy <- cov(df$x, df$y)
+cov_xz <- cov(df$x, df$z)
+cov_yz <- cov(df$y, df$z)
+
+# create portfolio weights (omegas)
+x_weights <- seq(from = 0, to = 1, length.out = 1000)
+
+# create a data.table that contains the weights for the three assets
+three_assets <- data.table(wx = rep(x_weights, each = length(x_weights)),
+                           wy = rep(x_weights, length(x_weights)))
+
+three_assets[, wz := 1 - wx - wy]
+
+# calculate the expected returns and standard deviations for the 1000 possible portfolios
+three_assets[, ':=' (er_p = wx * er_x + wy * er_y + wz * er_z,
+                     sd_p = sqrt(wx^2 * sd_x^2 +
+                                   wy^2 * sd_y^2 +
+                                   wz^2 * sd_z^2 +
+                                   2 * wx * wy * cov_xy +
+                                   2 * wx * wz * cov_xz +
+                                   2 * wy * wz * cov_yz))]
+
+# take out cases where we have negative weights (shortselling)
+three_assets <- three_assets[wx >= 0 & wy >= 0 & wz >= 0]
+three_assets
+
+# lastly plot the values
+ggplot() +
+  geom_point(data = three_assets, aes(x = sd_p, y = er_p, color = wx - wz)) +
+  geom_point(data = data.table(sd = c(sd_x, sd_y, sd_z), mean = c(er_x, er_y, er_z)),
+             aes(x = sd, y = mean), color = "red", size = 3, shape = 18) +
+  # Miscellaneous Formatting
+  theme_bw() + ggtitle("Possible Portfolios with Three Risky Assets") +
+  xlab("Volatility") + ylab("Expected Returns") +
+  scale_y_continuous(label = percent, limits = c(0, max(three_assets$er_p) * 1.2)) +
+  scale_x_continuous(label = percent, limits = c(0, max(three_assets$sd_p) * 1.2)) +
+  scale_color_gradientn(colors = c("red", "blue", "yellow"),
+                        name = expression(omega[x] - omega[z]), labels = percent)
+
+
+#Fama French 3 Factor model 
+#souce for Fama French
+source("/Users/chris/Documents/Hult/Fall 2022/Block II/1. Business Insights through Data - DAT-3534/8. Fama French multi-factor models source this file before running the next one.R")
+
+#calling the Fama French 3F model UDF for IXN
+IXN_FF3F <- fama_french_3F(ticker="IXN", from_date='2012-01-01', to_date='2022-12-11')
+summary(IXN_FF3F[[2]])
+#now let's visualize the model error and the cumulative stock returns
+ggplot(data=IXN_FF3F[[1]])+
+  geom_line(aes(x=Date, y=rr_spf), color="red4")+
+  geom_line(aes(x=Date, y=tr_cum), color="blue") #red is the error and blue is the stock return
+
+#calling the Fama French 3F model UDF for QQQ
+QQQ_FF3F <- fama_french_3F(ticker="QQQ", from_date='2012-01-01', to_date='2022-12-11')
+summary(QQQ_FF3F[[2]])
+
+ggplot(data=QQQ_FF3F[[1]])+
+  geom_line(aes(x=Date, y=rr_spf), color="red4")+
+  geom_line(aes(x=Date, y=tr_cum), color="blue")
+
+#calling the Fama French 3F model UDF for IEF
+IEF_FF3F <- fama_french_3F(ticker="IEF", from_date='2012-01-01', to_date='2022-12-11')
+summary(IEF_FF3F[[2]])
+
+ggplot(data=IEF_FF3F[[1]])+
+  geom_line(aes(x=Date, y=rr_spf), color="red4")+
+  geom_line(aes(x=Date, y=tr_cum), color="blue")
+
+
+#calling the Fama French 3F model UDF for VNQ
+VNQ_FF3F <- fama_french_3F(ticker="VNQ", from_date='2012-01-01', to_date='2022-12-11')
+summary(VNQ_FF3F[[2]])
+
+ggplot(data=VNQ_FF3F[[1]])+
+  geom_line(aes(x=Date, y=rr_spf), color="red4")+
+  geom_line(aes(x=Date, y=tr_cum), color="blue")
+
+
+#calling Fama French 3F model UDF for GLD
+GLD_FF3F <- fama_french_3F(ticker="GLD", from_date='2012-01-01', to_date='2022-12-11')
+summary(GLD_FF3F[[2]])
+
+ggplot(data=GLD_FF3F[[1]])+
+  geom_line(aes(x=Date, y=rr_spf), color="red4")+
+  geom_line(aes(x=Date, y=tr_cum), color="blue")
+
+library(tseries)
+#pacf(joined_prices_only$IXN.Adjusted)
+#pACF on ROR
+pacf(joined_monthlyreturns$monthly.returns)
+#how do these two differ - which one has autocorrelation, and which one doesn't
+pacf(joined_monthlyreturns$monthly.returns.1)
+pacf(joined_monthlyreturns$monthly.returns.2)
+pacf(joined_monthlyreturns$monthly.returns.3)
+pacf(joined_monthlyreturns$monthly.returns.4)
+
+acf(joined_monthlyreturns$monthly.returns) #IXN: ARMA (0,0) 0 lag in AR and 0 lag in MA. 
+acf(joined_monthlyreturns$monthly.returns.1)#QQQ: ARMA (0,0) 0 lag in AR and 0 lag in MA. 
+acf(joined_monthlyreturns$monthly.returns.2)#IEF: ARMA (0,0) 0 lag in AR and 0 lag in MA. 
+acf(joined_monthlyreturns$monthly.returns.3)#VQN: ARMA (3,0) 3 lag in AR and 0 lag in MA. 
+acf(joined_monthlyreturns$monthly.returns.4)#GLD: ARMA (0,0) 0 lag in AR and 0 lag in MA. 
+
+#Fitting ARMA on daily ROR stationary time series    
+
+stock1_returns <- dailyReturn(getSymbols("IXN", auto.assign=FALSE))
+stock2_returns <- dailyReturn(getSymbols("QQQ", auto.assign=FALSE))
+stock3_returns <- dailyReturn(getSymbols("IEF", auto.assign=FALSE))
+stock4_returns <- dailyReturn(getSymbols("VNQ", auto.assign=FALSE))
+stock5_returns <- dailyReturn(getSymbols("GLD", auto.assign=FALSE))
+joined_daily_returns <- merge.xts(stock1_returns, stock2_returns,stock3_returns, stock4_returns, stock5_returns)
+
+#fitting ARMA on IXN, QQQ, VQN
+IXN_arma <- arma(joined_daily_returns$daily.returns, order=c(0,0)) 
+summary(IXN_arma)
+QQQ_arma <- arma(joined_daily_returns$daily.returns.1, order=c(0,0)) 
+summary(QQQ_arma)
+VQN_arma <- arma(joined_daily_returns$daily.returns.3, order=c(3,0)) 
+summary(VQN_arma)
+
+#want to get forecasted values for 3 days out, #fitting ARMA(3,0) on VQN:
+VQN_arima <- arima(joined_daily_returns$daily.returns.3, order=c(3,0,0))
+summary(VQN_arima) 
+predict(VQN_arima, n.ahead=3) #want to get forecasted values for 3 days out
